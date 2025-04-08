@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music DJ Chatbot</title>
+    <style>
+        :root {
+            --primary-color: #6A11CB;
+            --secondary-color: #2575FC;
+            --accent-color: #FF4081;
+            --bg-dark: #121212;
+            --text-light: #FFFFFF;
+            --text-dark: #121212;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--bg-dark), #2A2A2A);
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #FFFFFF, #CCCCCC);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .api-settings {
+            position: relative;
+        }
+        
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .settings-popup {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: #2A2A2A;
+            border-radius: 8px;
+            padding: 15px;
+            width: 300px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            display: none;
+        }
+        
+        .settings-popup.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .settings-group {
+            margin-bottom: 15px;
+        }
+        
+        .settings-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #CCC;
+        }
+        
+        .settings-group select,
+        .settings-group input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .settings-group input:focus,
+        .settings-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4d4d; /* Default: disconnected */
+        }
+        
+        .status-indicator.connected {
+            background: #4dff4d;
+        }
+        
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .settings-actions button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .save-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow: hidden;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-light);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .playlist-container {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .playlist-title {
+            font-weight: bold;
+            color: #FFFFFF;
+        }
+        
+        .playlist-songs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .song {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .song:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .song-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .song-title {
+            font-weight: 500;
+        }
+        
+        .song-artist {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .emotion-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .emotion-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+        }
+        
+        .emotion-chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .emotion-chip.happy {
+            background: linear-gradient(135deg, #FFD600, #FF9E00);
+            color: var(--text-dark);
+        }
+        
+        .emotion-chip.sad {
+            background: linear-gradient(135deg, #0396FF, #1769FF);
+        }
+        
+        .emotion-chip.energetic {
+            background: linear-gradient(135deg, #FF512F, #DD2476);
+        }
+        
+        .emotion-chip.relaxed {
+            background: linear-gradient(135deg, #06BEB6, #48B1BF);
+        }
+        
+        .emotion-chip.focused {
+            background: linear-gradient(135deg, #8E2DE2, #4A00E0);
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 18px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 16px;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+        
+        button.send-btn {
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        button.send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            width: fit-content;
+            margin-bottom: 10px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.5s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .mood-visualizer {
+            height: 80px;
+            width: 100%;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        .mood-bar {
+            position: absolute;
+            bottom: 0;
+            width: 5px;
+            background: var(--accent-color);
+            border-radius: 2px 2px 0 0;
+            animation: rise-fall 2s infinite ease-in-out;
+        }
+        
+        @keyframes rise-fall {
+            0%, 100% { height: 30%; }
+            50% { height: 90%; }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .message {
+                max-width: 90%;
+            }
+            
+            .settings-popup {
+                width: 100%;
+                right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎧</div>
+                <div class="logo-text">MoodBeats DJ</div>
+            </div>
+            <div class="api-settings">
+                <button class="settings-btn" id="settingsBtn">
+                    <span>API Settings</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <div class="settings-popup" id="settingsPopup">
+                    <div class="settings-group">
+                        <label for="apiProvider">AI Provider</label>
+                        <select id="apiProvider">
+                            <option value="openai">OpenAI</option>
+                            <option value="huggingface">Hugging Face</option>
+                            <option value="cohere">Cohere</option>
+                            <option value="palm">Google PaLM</option>
+                        </select>
+                    </div>
+                    <div class="settings-group">
+                        <label for="apiKey">API Key</label>
+                        <input type="password" id="apiKey" placeholder="Enter your API key">
+                    </div>
+                    <div class="settings-group">
+                        <label for="modelSelect">Model</label>
+                        <select id="modelSelect">
+                            <!-- OpenAI models -->
+                            <option value="gpt-3.5-turbo" class="openai-model">GPT-3.5 Turbo</option>
+                            <option value="gpt-4" class="openai-model">GPT-4</option>
+                            <!-- Hugging Face models -->
+                            <option value="mixtral-8x7b" class="huggingface-model" style="display:none">Mixtral-8x7B</option>
+                            <option value="llama-2-70b" class="huggingface-model" style="display:none">Llama 2 70B</option>
+                            <!-- Cohere models -->
+                            <option value="command" class="cohere-model" style="display:none">Command</option>
+                            <option value="command-light" class="cohere-model" style="display:none">Command Light</option>
+                            <!-- PaLM models -->
+                            <option value="text-bison" class="palm-model" style="display:none">Text Bison</option>
+                            <option value="chat-bison" class="palm-model" style="display:none">Chat Bison</option>
+                        </select>
+                    </div>
+                    <div class="api-status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="statusText">Not connected</span>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="cancel-btn" id="cancelBtn">Cancel</button>
+                        <button class="save-btn" id="saveBtn">Save & Connect</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="emotion-chips">
+                <button class="emotion-chip happy" onclick="selectEmotion('happy')">Happy</button>
+                <button class="emotion-chip sad" onclick="selectEmotion('sad')">Sad</button>
+                <button class="emotion-chip energetic" onclick="selectEmotion('energetic')">Energetic</button>
+                <button class="emotion-chip relaxed" onclick="selectEmotion('relaxed')">Relaxed</button>
+                <button class="emotion-chip focused" onclick="selectEmotion('focused')">Focused</button>
+            </div>
+            
+            <div class="mood-visualizer" id="visualizer"></div>
+            
+            <div class="chat-container" id="chatContainer">
+                <div class="message bot-message">
+                    Hello! I'm your AI Music DJ. How are you feeling today? I can create a custom playlist based on your mood. Click one of the emotion buttons or just tell me how you're feeling! 🎵 (Configure your preferred AI model in API Settings)
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="userInput" placeholder="Tell me how you're feeling..." onkeydown="if(event.key === 'Enter') sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Music database organized by emotions
+        const musicDatabase = {
+            happy: [
+                { title: "Happy", artist: "Pharrell Williams", duration: "3:53" },
+                { title: "Can't Stop the Feeling!", artist: "Justin Timberlake", duration: "3:56" },
+                { title: "Good as Hell", artist: "Lizzo", duration: "2:39" },
+                { title: "Uptown Funk", artist: "Mark Ronson ft. Bruno Mars", duration: "4:30" },
+                { title: "Walking on Sunshine", artist: "Katrina & The Waves", duration: "3:58" },
+                { title: "Best Day of My Life", artist: "American Authors", duration: "3:14" },
+                { title: "Shake It Off", artist: "Taylor Swift", duration: "3:39" }
+            ],
+            sad: [
+                { title: "Someone Like You", artist: "Adele", duration: "4:45" },
+                { title: "Fix You", artist: "Coldplay", duration: "4:55" },
+                { title: "Hurt", artist: "Johnny Cash", duration: "3:38" },
+                { title: "Hello", artist: "Adele", duration: "4:55" },
+                { title: "Stay With Me", artist: "Sam Smith", duration: "2:52" },
+                { title: "Everybody Hurts", artist: "R.E.M.", duration: "5:17" },
+                { title: "Say Something", artist: "A Great Big World", duration: "3:49" }
+            ],
+            energetic: [
+                { title: "Don't Stop Me Now", artist: "Queen", duration: "3:29" },
+                { title: "Thunder", artist: "Imagine Dragons", duration: "3:07" },
+                { title: "Stronger", artist: "Kanye West", duration: "5:12" },
+                { title: "Eye of the Tiger", artist: "Survivor", duration: "4:05" },
+                { title: "This Is Me", artist: "Keala Settle", duration: "3:54" },
+                { title: "Till I Collapse", artist: "Eminem", duration: "4:57" },
+                { title: "Power", artist: "Kanye West", duration: "4:52" }
+            ],
+            relaxed: [
+                { title: "Weightless", artist: "Marconi Union", duration: "8:09" },
+                { title: "Clair de Lune", artist: "Claude Debussy", duration: "5:01" },
+                { title: "River Flows in You", artist: "Yiruma", duration: "3:25" },
+                { title: "Watermark", artist: "Enya", duration: "2:24" },
+                { title: "Pure Shores", artist: "All Saints", duration: "4:24" },
+                { title: "Gymnopédie No.1", artist: "Erik Satie", duration: "3:05" },
+                { title: "The Rain", artist: "Ola Gjeilo", duration: "3:14" }
+            ],
+            focused: [
+                { title: "Experience", artist: "Ludovico Einaudi", duration: "5:15" },
+                { title: "Time", artist: "Hans Zimmer", duration: "4:35" },
+                { title: "Brain Waves", artist: "Alpha Waves", duration: "6:30" },
+                { title: "Focus", artist: "Haux", duration: "3:41" },
+                { title: "Divenire", artist: "Ludovico Einaudi", duration: "6:42" },
+                { title: "Intro", artist: "The xx", duration: "2:07" },
+                { title: "Your Hand in Mine", artist: "Explosions in the Sky", duration: "8:16" }
+            ],
+            mixed: [
+                { title: "Bohemian Rhapsody", artist: "Queen", duration: "5:55" },
+                { title: "Vienna", artist: "Billy Joel", duration: "3:34" },
+                { title: "Take on Me", artist: "A-ha", duration: "3:46" },
+                { title: "Africa", artist: "Toto", duration: "4:55" },
+                { title: "Dreams", artist: "Fleetwood Mac", duration: "4:14" },
+                { title: "Hey Jude", artist: "The Beatles", duration: "7:11" },
+                { title: "Superstition", artist: "Stevie Wonder", duration: "4:07" }
+            ]
+        };
+
+        // Responses for different emotions
+        const responses = {
+            happy: [
+                "You're feeling happy? That's awesome! Here's an upbeat playlist to keep those good vibes going! 🎵✨",
+                "I love that positive energy! Check out this happy playlist that'll keep you smiling! 😊🎶",
+                "Happiness looks great on you! Let's amplify that with some cheerful tunes! 🌞🎵"
+            ],
+            sad: [
+                "I understand you're feeling down. Here's a playlist that might provide some comfort during this time. 💙🎵",
+                "Sometimes it's okay to sit with your emotions. These songs might help you process what you're feeling. 🫂🎶",
+                "I've put together some songs that acknowledge sadness but also offer hope. Music can be healing. 🌧️🎵"
+            ],
+            energetic: [
+                "Feeling pumped up? Let's channel that energy with this high-octane playlist! 💪🔥",
+                "Ready to conquer the world? These tracks will fuel that fire! Let's go! 🚀🎵",
+                "With that energy, you're unstoppable! Here's a playlist to match your vibe! ⚡🎶"
+            ],
+            relaxed: [
+                "Looking for some calm? This soothing playlist will help you unwind and find your zen. 🌊🎵",
+                "Perfect time to relax. These gentle melodies will help you find your peaceful center. 🧘‍♂️🎶",
+                "Sometimes we all need to slow down. Here's a tranquil selection to help you breathe deeply. 🌿🎵"
+            ],
+            focused: [
+                "Need to concentrate? This playlist is designed to enhance your focus without distractions. 🧠🎵",
+                "I've selected these tracks specifically to help you get in the zone and stay productive. 📚🎶",
+                "When it's time to focus, the right music makes all the difference. Try these tracks! 🔍🎵"
+            ],
+            mixed: [
+                "Sounds like you've got a mix of emotions! Here's a versatile playlist with something for every mood. 🎭🎵",
+                "Complex feelings call for a diverse playlist! I've mixed it up to match your multifaceted mood. 🌈🎶",
+                "Life is never just one emotion, is it? This playlist embraces that beautiful complexity. 🧩🎵"
+            ]
+        };
+
+        // Additional emotion keywords mapping
+        const emotionKeywords = {
+            happy: ["happy", "joyful", "excited", "cheerful", "upbeat", "delighted", "glad", "pleased", "content", "elated"],
+            sad: ["sad", "down", "depressed", "unhappy", "blue", "gloomy", "melancholy", "heartbroken", "upset", "sorrowful"],
+            energetic: ["energetic", "pumped", "motivated", "active", "dynamic", "charged", "peppy", "lively", "vigorous", "spirited"],
+            relaxed: ["relaxed", "calm", "peaceful", "tranquil", "serene", "chill", "mellow", "soothing", "easy-going", "laid-back"],
+            focused: ["focused", "concentrated", "studying", "working", "determined", "attentive", "productive", "driven", "busy", "studious"]
+        };
+
+        // API configuration
+        let apiConfig = {
+            provider: 'openai',
+            apiKey: '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',
+            model: 'gpt-3.5-turbo',
+            connected: false
+        };
+
+        // Try to load saved API config from localStorage
+        try {
+            const savedConfig = localStorage.getItem('apiConfig');
+            if (savedConfig) {
+                apiConfig = JSON.parse(savedConfig);
+                document.getElementById('apiProvider').value = apiConfig.provider;
+                document.getElementById('apiKey').value = apiConfig.apiKey;
+                document.getElementById('modelSelect').value = apiConfig.model;
+                updateModelOptions(apiConfig.provider);
+                
+                if (apiConfig.connected) {
+                    document.getElementById('statusIndicator').classList.add('connected');
+                    document.getElementById('statusText').textContent = 'Connected';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading saved API config:', error);
+        }
+
+        let typingTimeout;
+        let currentMood = "mixed";
+
+        // Initialize mood visualizer
+        function initVisualizer() {
+            const visualizer = document.getElementById('visualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 35; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'mood-bar';
+                bar.style.left = `${i * 3}%`;
+                bar.style.animation = `rise-fall ${(Math.random() * 2 + 1)}s infinite ease-in-out`;
+                bar.style.animationDelay = `${Math.random() * 2}s`;
+                visualizer.appendChild(bar);
+            }
+            
+            updateVisualizerColors(currentMood);
+        }
+
+        // Update visualizer based on mood
+        function updateVisualizerColors(mood) {
+            const bars = document.querySelectorAll('.mood-bar');let color1, color2;
+            
+            switch(mood) {
+                case 'happy':
+                    color1 = '#FFD600';
+                    color2 = '#FF9E00';
+                    break;
+                case 'sad':
+                    color1 = '#0396FF';
+                    color2 = '#1769FF';
+                    break;
+                case 'energetic':
+                    color1 = '#FF512F';
+                    color2 = '#DD2476';
+                    break;
+                case 'relaxed':
+                    color1 = '#06BEB6';
+                    color2 = '#48B1BF';
+                    break;
+                case 'focused':
+                    color1 = '#8E2DE2';
+                    color2 = '#4A00E0';
+                    break;
+                default:
+                    color1 = '#6A11CB';
+                    color2 = '#2575FC';
+            }
+            
+            bars.forEach(bar => {
+                bar.style.background = `linear-gradient(to top, ${color1}, ${color2})`;
+                
+                if (mood === 'relaxed') {
+                    bar.style.animation = `rise-fall ${(Math.random() * 3 + 2)}s infinite ease-in-out`;
+                    bar.style.animationDelay = `${Math.random() * 2}s`;
+                } else if (mood === 'energetic') {
+                    bar.style.animation = `rise-fall ${(Math.random() * 0.5 + 0.5)}s infinite ease-in-out`;
+                    bar.style.animationDelay = `${Math.random() * 0.5}s`;
+                } else if (mood === 'sad') {
+                    bar.style.animation = `rise-fall ${(Math.random() * 4 + 3)}s infinite ease-in-out`;
+                    bar.style.animationDelay = `${Math.random() * 2}s`;
+                } else {
+                    bar.style.animation = `rise-fall ${(Math.random() * 2 + 1)}s infinite ease-in-out`;
+                    bar.style.animationDelay = `${Math.random() * 2}s`;
+                }
+            });
+        }
+
+        // Add a message to the chat container
+        function addMessage(content, isUser = false) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chatContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // Detect emotion from text
+        function detectEmotion(text) {
+            text = text.toLowerCase();
+            
+            for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+                for (const keyword of keywords) {
+                    if (text.includes(keyword)) {
+                        return emotion;
+                    }
+                }
+            }
+            
+            return "mixed";
+        }
+
+        // Generate playlist HTML
+        function generatePlaylist(emotion) {
+            let songs = musicDatabase[emotion];
+            let playlistHtml = `
+                <div class="playlist-container">
+                    <div class="playlist-header">
+                        <div class="playlist-title">"${emotion.charAt(0).toUpperCase() + emotion.slice(1)}" Playlist</div>
+                        <div class="playlist-count">${songs.length} songs</div>
+                    </div>
+                    <div class="playlist-songs">
+            `;
+            
+            for (const song of songs) {
+                playlistHtml += `
+                    <div class="song">
+                        <div class="song-info">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-artist">${song.artist}</div>
+                        </div>
+                        <div class="song-duration">${song.duration}</div>
+                    </div>
+                `;
+            }
+            
+            playlistHtml += `
+                    </div>
+                </div>
+            `;
+            
+            return playlistHtml;
+        }
+
+        // Update model options based on selected provider
+        function updateModelOptions(provider) {
+            const modelSelect = document.getElementById('modelSelect');
+            const modelOptions = modelSelect.querySelectorAll('option');
+            
+            modelOptions.forEach(option => {
+                option.style.display = 'none';
+            });
+            
+            const providerModels = modelSelect.querySelectorAll(`.${provider}-model`);
+            providerModels.forEach(option => {
+                option.style.display = '';
+            });
+            
+            // Select first available model
+            if (providerModels.length > 0) {
+                modelSelect.value = providerModels[0].value;
+            }
+        }
+
+        // Select emotion from the emotion chips
+        function selectEmotion(emotion) {
+            const userInput = document.getElementById('userInput');
+            userInput.value = `I'm feeling ${emotion} today`;
+            sendMessage();
+        }
+
+        // Call AI API
+       // Replace your existing callAI function with this one
+async function callAI(prompt) {
+    if (!apiConfig.connected || !apiConfig.apiKey) {
+        return detectEmotion(prompt);
+    }
+    
+    try {
+        showToast('Calling AI for emotion detection...', 2000);
+        
+        // Call our backend API
+        const response = await fetch('/api/detect-emotion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: prompt,
+                provider: apiConfig.provider,
+                apiKey: apiConfig.apiKey,
+                model: apiConfig.model
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error connecting to server');
+        }
+        
+        const data = await response.json();
+        return data.emotion;
+    } catch (error) {
+        console.error('Error calling AI API:', error);
+        showToast('API Error: ' + error.message, 4000);
+        return detectEmotion(prompt);
+    }
+}
+
+        // Send message function
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, true);
+            userInput.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Call AI API for emotion detection
+                const emotion = await callAI(message);
+                currentMood = emotion;
+                updateVisualizerColors(emotion);
+                
+                // Simulate AI thinking
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    
+                    // Get random response for the emotion
+                    const responses_array = responses[emotion];
+                    const response = responses_array[Math.floor(Math.random() * responses_array.length)];
+                    
+                    // Generate and add playlist response
+                    addMessage(response + generatePlaylist(emotion));
+                }, 500 + Math.random() * 1000); // Random delay between 0.5-1.5 seconds
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage("I'm having trouble connecting to my AI brain right now. Let me recommend some music based on what I understood. " + generatePlaylist("mixed"));
+                showToast('Error: ' + error.message, 4000);
+            }
+        }
+
+        // Settings popup event listeners
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            document.getElementById('settingsPopup').classList.toggle('active');
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('settingsPopup').classList.remove('active');
+        });
+
+        document.getElementById('apiProvider').addEventListener('change', (e) => {
+            updateModelOptions(e.target.value);
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('modelSelect').value;
+            
+            if (!apiKey) {
+                showToast('Please enter an API key', 3000);
+                return;
+            }
+            
+            // Save configuration
+            apiConfig = {
+                provider,
+                apiKey,
+                model,
+                connected: true
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('apiConfig', JSON.stringify(apiConfig));
+            
+            // Update UI
+            document.getElementById('statusIndicator').classList.add('connected');
+            document.getElementById('statusText').textContent = 'Connected';
+            document.getElementById('settingsPopup').classList.remove('active');
+            
+            showToast('API Settings saved successfully', 3000);
+        });
+
+        // Close settings when clicking outside
+        document.addEventListener('click', (e) => {
+            const settingsPopup = document.getElementById('settingsPopup');
+            const settingsBtn = document.getElementById('settingsBtn');
+            
+            if (settingsPopup.classList.contains('active') && 
+                !settingsPopup.contains(e.target) && 
+                !settingsBtn.contains(e.target)) {
+                settingsPopup.classList.remove('active');
+            }
+        });
+
+        // Initialize visualizer on load
+        window.onload = initVisualizer;
+    </script>
+</body>
+</html>
